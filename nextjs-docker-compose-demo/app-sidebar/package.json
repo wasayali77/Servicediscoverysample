@@ -1,0 +1,14 @@
+{
+  "name": "app-sidebar",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "axios": "^1.10.0",
+    "next": "^15.4.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}

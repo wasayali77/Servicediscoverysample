@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  app-main:
+    build: ./app-main
+    ports:
+      - "3000:3000"
+    depends_on:
+      - app-sidebar
+      - app-footer
+
+  app-sidebar:
+    build: ./app-sidebar
+    ports:
+      - "3001:3000"
+    container_name: app-sidebar
+
+  app-footer:
+    build: ./app-footer
+    ports:
+      - "3002:3000"
+    container_name: app-footer
