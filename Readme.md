@@ -1,45 +1,38 @@
-🧾 Service Discovery using Docker Compose for Micro-Frontends (Next.js)
+🧾 Micro-Frontend Architecture with Service Discovery using Docker Compose
 📌 Background
-Currently, we have a monolithic Next.js app deployed using Azure DevOps pipelines where:
+We are refactoring our monolithic Next.js app into three independent micro-frontend applications:
 
-Docker image is built in the build stage
+main-app
 
-Image is saved and published as artifact
+sidebar
 
-In release stage, image is loaded and docker run is used to start the container
+footer
 
-Now, we are refactoring this monolith into 3 micro-frontend Next.js apps:
+Each micro-frontend:
 
-Sidebar
+Lives in its own Git repository
 
-Footer
+Has its own Azure DevOps CI/CD pipeline
 
-Main App
-
-Each will:
-
-Live in its own Git repo
-
-Have its own build and release pipeline
-
-Be deployed as individual containers
+Is deployed as an individual container
 
 🎯 Goal
-Enable these micro-frontends to work in sync and communicate internally without relying on hardcoded hostnames or ports.
+Enable these micro-frontends to work together and communicate internally without relying on hardcoded hostnames or ports.
 
 🧩 Why Docker Compose?
-Docker Compose helps us:
+Using Docker Compose allows us to:
 
-✅ Run multiple containers as a single unit
+✅ Run multiple containers together as a unit
 ✅ Enable automatic service discovery using container names
 ✅ Avoid hardcoding backend URLs
-✅ Restart only the service that needs update
-✅ Avoid bringing down running containers
+✅ Restart only the service that needs updating
+✅ Avoid bringing down other running services
 
-🏗️ Proposed Architecture
-We will define a docker-compose.yml that includes:
+🏗️ Architecture Overview
+We define a shared docker-compose.yml:
 
 version: "3.8"
+
 services:
   main-app:
     image: main-app:latest
@@ -61,47 +54,54 @@ services:
     container_name: footer
     ports:
       - "3002:3000"
-Each app can now discover others by name (e.g. http://sidebar:3000)
+🔗 Service Discovery
+All services run on the default Docker Compose bridge network
 
-All containers run on a default bridge network (Docker Compose handles this)
+Services can communicate using container names as hostnames (e.g., http://sidebar:3000)
 
-Only exposed ports are public — internal communication happens via service names
+Only public ports are exposed to the host — internal traffic is private and routed by Compose
 
-🛠️ CI/CD Flow for Each Micro-Frontend Repo
-🏗️ Build Pipeline (Azure DevOps)
-No change needed. You already have this in place:
+🛠️ CI/CD Flow for Each Micro-Frontend
+🧪 Build Pipeline (Azure DevOps)
+No changes needed in the build pipeline. Use your existing steps:
 
 - script: docker build -t $(Build.Repository.Name):latest .
 - script: docker save -o $(Build.ArtifactStagingDirectory)/docker-image.tar $(Build.Repository.Name):latest
-Each repo creates its own Docker image and publishes it.
+Each repo:
 
-🚀 Release Pipeline (Using docker-compose for deployment)
-Instead of docker run, we do:
+Builds its own Docker image
 
-Pull existing docker-compose.yml from shared folder or config repo
+Publishes it as an artifact
 
-Place built image in correct path (e.g., /home/glsadmin/gls/sidebar)
+🚀 Release Pipeline (Using Docker Compose)
+Instead of using docker run, follow these steps:
 
-Edit image name in compose file if needed (sidebar:latest)
+Pull the shared docker-compose.yml (from a config repo or shared folder)
 
-Run:
+Load the built image in the correct directory (e.g., /home/glsadmin/gls/sidebar)
+
+If necessary, update the image tag in the Compose file (e.g., sidebar:latest)
+
+Deploy using:
+
 cd /home/glsadmin/gls/
 docker compose up -d sidebar
-⚠️ This will:
+✅ This will:
 
-Only restart sidebar service
+Only restart the sidebar service
 
-Keep footer and main-app running as-is
+Keep footer and main-app running
 
-Automatically rewire network so that main-app connects to the new sidebar container without reconfiguration
+Automatically reconnect main-app to the updated sidebar using the Docker network
 
-🧪 Example: main-app Consuming sidebar and footer
-// In main-app frontend code
-const sidebarData = await fetch(process.env.SIDEBAR_URL)
-const footerData = await fetch(process.env.FOOTER_URL)
-.env:
-
+📦 Example: Main App Consuming Sidebar & Footer
+🔧 In .env
 env
+
 SIDEBAR_URL=http://sidebar:3000/api/hello
 FOOTER_URL=http://footer:3000/api/hello
-These will resolve automatically using Docker Compose network.
+🧩 In Main App Code
+const sidebarData = await fetch(process.env.SIDEBAR_URL);
+const footerData = await fetch(process.env.FOOTER_URL);
+✅ These environment variables resolve automatically inside Docker using service names.
+
