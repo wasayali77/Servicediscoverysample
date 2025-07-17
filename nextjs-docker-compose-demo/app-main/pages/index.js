@@ -7,7 +7,7 @@ export async function getServerSideProps() {
     const sidebarData = await sidebarRes.json();
     sidebar = sidebarData.message;
   } catch (e) {
-    sidebar = 'Sidebar unavailable 😢';
+    sidebar = 'Sidebar unavailable';
   }
 
   try {
@@ -15,7 +15,7 @@ export async function getServerSideProps() {
     const footerData = await footerRes.json();
     footer = footerData.message;
   } catch (e) {
-    footer = 'Footer unavailable 😢';
+    footer = 'Footer unavailable';
   }
 
   return {
